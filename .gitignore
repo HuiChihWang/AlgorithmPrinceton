@@ -25,3 +25,7 @@ hs_err_pid*
 # intelliJ
 .idea/
 *.iml
+*.DS_Store
+
+# not ignore algorithm lib
+!algs4.jar
