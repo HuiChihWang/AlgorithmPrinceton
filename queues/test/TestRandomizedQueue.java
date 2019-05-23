@@ -1,6 +1,11 @@
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.StdOut;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -65,8 +70,49 @@ public class TestRandomizedQueue {
         for (Integer item: tester) {
             assertTrue(testCase.contains(item));
         }
+    }
 
+    @Test
+    public void testParallelIterator() {
+        RandomizedQueue<Integer> tester = new RandomizedQueue<>();
+        ArrayList<Integer> result1 = new ArrayList<>();
+        ArrayList<Integer> result2 = new ArrayList<>();
+
+        for (int i = 0; i < 10; ++i) {
+            tester.enqueue(i);
+        }
+
+        for (Integer num: tester) {
+            result1.add(num);
+        }
+
+        for (Integer num: tester) {
+            result2.add(num);
+        }
+
+        StdOut.println(Arrays.toString(result1.toArray()));
+        StdOut.println(Arrays.toString(result2.toArray()));
+        assertNotEquals(result1, result2);
+    }
+
+    @Test
+    public void testNestedIterator() {
+        RandomizedQueue<Integer> tester = new RandomizedQueue<>();
+
+        for (int i = 0; i < 10; ++i) {
+            tester.enqueue(i);
+        }
+
+        for(Integer num1: tester) {
+            for (Integer num2: tester) {
+                StdOut.printf("%d %d", num1, num2);
+                StdOut.println();
+            }
+        }
 
     }
+
+
+
 
 }

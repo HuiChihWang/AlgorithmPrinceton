@@ -49,6 +49,7 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
     }
 
     public Item sample() {
+        checkAccessible();
         int randomIdx = StdRandom.uniform(size);
         return arrayQueue[randomIdx];
     }
@@ -129,6 +130,10 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
 
         @Override
         public Item next() {
+            if (!hasNext()) {
+               throw new NoSuchElementException();
+            }
+
             Item item = arrayQueue[randomSeqence[count]];
             count += 1;
             return item;
@@ -146,9 +151,7 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
                 randomSeqence[idx] = idx;
             }
 
-            for (int idx = 0; idx < size; ++idx) {
-                swap(randomSeqence, idx, StdRandom.uniform(size));
-            }
+            StdRandom.shuffle(randomSeqence);
         }
 
     }
