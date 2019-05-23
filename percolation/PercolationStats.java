@@ -2,73 +2,77 @@ import edu.princeton.cs.algs4.StdRandom;
 import edu.princeton.cs.algs4.StdStats;
 
 public class PercolationStats {
-    private final int ExperimentTimes;
-    private final int TestGridSize;
+    private final int experimentTimes;
+    private final int testGridSize;
     private final double[] arrayPercolationThresh;
+    private final double ONE_STDDEV = 1.96;
 
 
-    public PercolationStats(int n, int trials){
-        if(n <= 0 || trials <= 0)
+    public PercolationStats(int n, int trials) {
+        if (n <= 0 || trials <= 0) {
             throw new IllegalArgumentException();
+        }
 
-        ExperimentTimes = trials;
-        TestGridSize = n;
-        arrayPercolationThresh = new double[ExperimentTimes];
+        experimentTimes = trials;
+        testGridSize = n;
+        arrayPercolationThresh = new double[experimentTimes];
 
-        Simulate();
+        simulate();
     }
 
-    private Percolation createPercolation(int N){
-        return new Percolation(N);
+    private Percolation createPercolation(int gridSize) {
+        return new Percolation(gridSize);
     }
 
-    private void Simulate(){
-        for(int i=0; i<ExperimentTimes; ++i)
-            arrayPercolationThresh[i] = SimulateOneTime();
+    private void simulate() {
+        for (int i = 0; i < experimentTimes; ++i) {
+            arrayPercolationThresh[i] = simulateOneTime();
+        }
 
     }
 
-    private double SimulateOneTime(){
-        Percolation pTester = createPercolation(TestGridSize);
-        while(!pTester.percolates())
-            RandomOpenSite(pTester);
+    private double simulateOneTime() {
+        Percolation tester = createPercolation(testGridSize);
+        while (!tester.percolates()) {
+            randomOpenSite(tester);
+        }
 
-        return (double)pTester.numberOfOpenSites() / (double)(TestGridSize*TestGridSize);
+        return (double) tester.numberOfOpenSites() / (double) (testGridSize * testGridSize);
     }
 
-    private void RandomOpenSite(Percolation pTester){
-        int[] blockPos = ChooseRandomBlockSite(pTester);
-        pTester.open(blockPos[0], blockPos[1]);
+    private void randomOpenSite(Percolation tester) {
+        int[] blockPos = chooseRandomBlockSite(tester);
+        tester.open(blockPos[0], blockPos[1]);
     }
 
-    private int[] ChooseRandomBlockSite(Percolation pTester){
-        int row = StdRandom.uniform(TestGridSize);
-        int col = StdRandom.uniform(TestGridSize);
+    private int[] chooseRandomBlockSite(Percolation tester) {
+        int row = StdRandom.uniform(testGridSize) + 1;
+        int col = StdRandom.uniform(testGridSize) + 1;
 
-        while(pTester.isOpen(row, col)){
-            row = StdRandom.uniform(TestGridSize);
-            col = StdRandom.uniform(TestGridSize);
+        while (tester.isOpen(row, col)) {
+            row = StdRandom.uniform(testGridSize);
+            col = StdRandom.uniform(testGridSize);
         }
         return new int[]{row, col};
     }
 
-    public double mean(){
+    public double mean() {
         return StdStats.mean(arrayPercolationThresh);
     }
 
-    public double stddev(){
+    public double stddev() {
         return StdStats.stddev(arrayPercolationThresh);
     }
 
-    public double confidenceLo(){
-        return mean() - 1.96*stddev()/Math.sqrt((double)ExperimentTimes);
+    public double confidenceLo() {
+        return mean() - ONE_STDDEV * stddev() / Math.sqrt((double) experimentTimes);
     }
 
-    public double confidenceHi(){
-        return mean() + 1.96*stddev()/Math.sqrt((double)ExperimentTimes);
+    public double confidenceHi() {
+        return mean() + ONE_STDDEV * stddev() / Math.sqrt((double) experimentTimes);
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         int n = Integer.parseInt(args[0]);
         int trials = Integer.parseInt(args[1]);
 
@@ -76,6 +80,8 @@ public class PercolationStats {
 
         System.out.println(String.format("mean = %f", percolateState.mean()));
         System.out.println(String.format("stddev = %f", percolateState.stddev()));
-        System.out.println(String.format("stddev = [%f, %f]", percolateState.confidenceLo(), percolateState.confidenceHi()));
+        double confidenceLower = percolateState.confidenceLo();
+        double confidenceHigh = percolateState.confidenceHi();
+        System.out.println(String.format("stddev = [%f, %f]", confidenceLower, confidenceHigh));
     }
 }

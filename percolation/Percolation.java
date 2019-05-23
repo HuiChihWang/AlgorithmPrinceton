@@ -1,149 +1,164 @@
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
-import java.util.HashMap;
 
 public class Percolation {
-    private final WeightedQuickUnionUF UnionOfTopVirtualSite;
-    private final WeightedQuickUnionUF UnionOfBottomVirtualSite;
-    private final PercolationBoard StatesHolder;
-    private final int GridSize;
-    private final int VirtualSiteIndex;
+    private final WeightedQuickUnionUF unionTopVirtualSite;
+    private final WeightedQuickUnionUF unionBottomVirtualSite;
+    private final PercolationBoard statesHolder;
+    private final int gridSize;
+    private final int virtualSiteIndex;
     private boolean isPercolate;
-    private int NumOfOpenSites;
+    private int numOpenSites;
 
-    public Percolation(int N) {
-        if (N <= 0)
-            throw  new IllegalArgumentException();
+    public Percolation(int gridSize) {
+        if (gridSize <= 0) {
+            throw new IllegalArgumentException();
+        }
 
-        GridSize = N;
-        NumOfOpenSites = 0;
-        VirtualSiteIndex = GridSize * GridSize;
-        StatesHolder = new PercolationBoard(GridSize);
-        UnionOfTopVirtualSite = new WeightedQuickUnionUF(GridSize*GridSize + 1);
-        UnionOfBottomVirtualSite = new WeightedQuickUnionUF(GridSize*GridSize +1);
+        this.gridSize = gridSize;
+        numOpenSites = 0;
+        virtualSiteIndex = this.gridSize * this.gridSize;
+        statesHolder = new PercolationBoard(this.gridSize);
+        unionTopVirtualSite = new WeightedQuickUnionUF(this.gridSize * this.gridSize + 1);
+        unionBottomVirtualSite = new WeightedQuickUnionUF(this.gridSize * this.gridSize + 1);
     }
 
-    public void open(int row, int col){
+    public void open(int row, int col) {
         checkValidIndex(row, col);
-        if(StatesHolder.GetState(row, col) == DataType.State.OPEN)
+
+        if (statesHolder.getState(row, col) == DataType.State.OPEN) {
             return;
+        }
 
-        ConnectedToSource(row, col);
-        ConnectedToTarget(row, col);
+        connectedToSource(row, col);
+        connectedToTarget(row, col);
 
-        StatesHolder.SetState(DataType.State.OPEN, row, col);
-        NumOfOpenSites += 1;
+        statesHolder.setState(DataType.State.OPEN, row, col);
+        numOpenSites += 1;
 
-        ConnectToNeigbor(row, col);
-        CheckIsPercolate(row, col);
+        connectToNeigbor(row, col);
+
+        if (!isPercolate) {
+            checkIsPercolate(row, col);
+        }
     }
 
-    public boolean isOpen(int row, int col){
+    public boolean isOpen(int row, int col) {
         checkValidIndex(row, col);
-        return StatesHolder.GetState(row, col) == DataType.State.OPEN;
+        return statesHolder.getState(row, col) == DataType.State.OPEN;
     }
 
-    public boolean isFull(int row, int col){
+    public boolean isFull(int row, int col) {
         checkValidIndex(row, col);
-        return UnionOfTopVirtualSite.connected(VirtualSiteIndex, transformTo1DIndex(row, col));
+        return unionTopVirtualSite.connected(virtualSiteIndex, transformTo1DIndex(row, col));
     }
 
-    public int numberOfOpenSites(){
-        return NumOfOpenSites;
+    public int numberOfOpenSites() {
+        return numOpenSites;
     }
 
-    public boolean percolates(){
+    public boolean percolates() {
         return isPercolate;
     }
 
-    private void checkValidIndex(int row, int col){
-        if(row >= GridSize || row < 0 || col >= GridSize || col < 0)
-            throw new IndexOutOfBoundsException();
-    }
-
-    private int transformTo1DIndex(int row, int col){
-        return row * GridSize + col;
-    }
-
-    private int[] getTranslationByDirection(DataType.Direction dir, int row, int col){
-        if(dir == DataType.Direction.LEFT)
-            return new int[]{row, col - 1};
-        else if(dir == DataType.Direction.RIGHT)
-            return new int[]{row, col + 1};
-        else if(dir == DataType.Direction.TOP)
-            return new int[]{row - 1, col};
-        else if(dir == DataType.Direction.BOTTOM)
-            return new int[]{row + 1, col};
-        else
+    private void checkValidIndex(int row, int col) {
+        if (row > gridSize || row < 0 || col > gridSize || col < 0) {
             throw new IllegalArgumentException();
+        }
     }
 
-    private void ConnectToNeigbor(int row, int col){
-        int current_index = transformTo1DIndex(row, col);
-        HashMap<DataType.Direction, DataType.State> neighbors = StatesHolder.GetNeighborStates(row, col);
-        for(DataType.Direction dir: neighbors.keySet()){
-            if(neighbors.get(dir) == DataType.State.OPEN){
-                int[] neigbor_pos = getTranslationByDirection(dir, row, col);
-                int neigbor_index = transformTo1DIndex(neigbor_pos[0], neigbor_pos[1]);
-                UnionOfTopVirtualSite.union(neigbor_index, current_index);
-                UnionOfBottomVirtualSite.union(neigbor_index,current_index);
+    private int transformTo1DIndex(int row, int col) {
+        return row * gridSize + col;
+    }
+
+    private int[] getTranslationByDirection(int dir, int row, int col) {
+        if (dir == DataType.Direction.LEFT) {
+            return new int[]{row, col - 1};
+        } else if (dir == DataType.Direction.RIGHT) {
+            return new int[]{row, col + 1};
+        } else if (dir == DataType.Direction.TOP) {
+            return new int[]{row - 1, col};
+        } else if (dir == DataType.Direction.BOTTOM) {
+            return new int[]{row + 1, col};
+        } else {
+            throw new IllegalArgumentException();
+        }
+
+    }
+
+    private void connectToNeigbor(int row, int col) {
+        int currentIndex = transformTo1DIndex(row, col);
+        DataType.State[] neighbors;
+        neighbors = statesHolder.getNeighborStates(row, col);
+        for (int dir = 0; dir < DataType.Direction.NEIGHBOR_SIZE; ++dir) {
+            if (neighbors[dir] == DataType.State.OPEN) {
+                int[] neigborPos = getTranslationByDirection(dir, row, col);
+                int neigborIndex = transformTo1DIndex(neigborPos[0], neigborPos[1]);
+                unionTopVirtualSite.union(neigborIndex, currentIndex);
+                unionBottomVirtualSite.union(neigborIndex, currentIndex);
             }
         }
     }
 
-    private void ConnectedToSource(int row, int col){
-        if(row == 0)
-            UnionOfTopVirtualSite.union(VirtualSiteIndex, transformTo1DIndex(row, col));
+    private void connectedToSource(int row, int col) {
+        if (row == 0) {
+            unionTopVirtualSite.union(virtualSiteIndex, transformTo1DIndex(row, col));
+        }
     }
 
-    private void ConnectedToTarget(int row, int col){
-        if(row == GridSize-1)
-            UnionOfBottomVirtualSite.union(VirtualSiteIndex, transformTo1DIndex(row, col));
+    private void connectedToTarget(int row, int col) {
+        if (row == gridSize - 1) {
+            unionBottomVirtualSite.union(virtualSiteIndex, transformTo1DIndex(row, col));
+        }
     }
 
-    private void CheckIsPercolate(int row, int col){
-        int current_idx = transformTo1DIndex(row, col);
-        boolean isConnectToBottom = UnionOfBottomVirtualSite.connected(VirtualSiteIndex, current_idx);
-        boolean isConnectToTop = UnionOfTopVirtualSite.connected(VirtualSiteIndex, current_idx);
+    private void checkIsPercolate(int row, int col) {
+        int currentIdx = transformTo1DIndex(row, col);
+        boolean isConnectToBottom = unionBottomVirtualSite.connected(virtualSiteIndex, currentIdx);
+        boolean isConnectToTop = unionTopVirtualSite.connected(virtualSiteIndex, currentIdx);
         isPercolate = isConnectToBottom && isConnectToTop;
     }
 
     private class PercolationBoard {
-        private DataType.State[][] StatesHolder;
+        private DataType.State[][] statesHolder;
     
-        public PercolationBoard(int N){
-            StatesHolder =  new DataType.State[N + 2][N + 2];
-            
-            for(int i = 0; i < N + 2; ++i)
-                for(int j = 0; j < N + 2; ++j)
-                    StatesHolder[i][j] = DataType.State.BLOCK;
+        PercolationBoard(int gridSize) {
+            statesHolder =  new DataType.State[gridSize + 2][gridSize + 2];
+            for (int i = 0; i < gridSize + 2; ++i) {
+                for (int j = 0; j < gridSize + 2; ++j) {
+                    statesHolder[i][j] = DataType.State.BLOCK;
+                }
+            }
         }
     
-        public void SetState(DataType.State state, int row, int col){
-            StatesHolder[row + 1][col + 1] = state;
+        void setState(DataType.State state, int row, int col) {
+            statesHolder[row + 1][col + 1] = state;
         }
     
-        public DataType.State GetState(int row, int col){
-            return StatesHolder[row + 1][col + 1];
+        DataType.State getState(int row, int col) {
+            return statesHolder[row + 1][col + 1];
         }
-    
-        public HashMap<DataType.Direction, DataType.State> GetNeighborStates(int row, int col) {
-            HashMap<DataType.Direction, DataType.State> neigborState = new HashMap<>();
-            neigborState.put(DataType.Direction.LEFT, StatesHolder[row+1][col]);
-            neigborState.put(DataType.Direction.RIGHT, StatesHolder[row+1][col+2]);
-            neigborState.put(DataType.Direction.TOP, StatesHolder[row][col+1]);
-            neigborState.put(DataType.Direction.BOTTOM, StatesHolder[row+2][col+1]);
+
+        DataType.State[] getNeighborStates(int row, int col) {
+            DataType.State[] neigborState = new DataType.State[DataType.Direction.NEIGHBOR_SIZE];
+            neigborState[DataType.Direction.LEFT] = statesHolder[row + 1][col];
+            neigborState[DataType.Direction.RIGHT] = statesHolder[row + 1][col + 2];
+            neigborState[DataType.Direction.BOTTOM] = statesHolder[row + 2][col + 1];
+            neigborState[DataType.Direction.TOP] = statesHolder[row][col + 1];
             return neigborState;
         }
     }
 
-    private static class DataType{
-
+    private static class DataType {
         public enum State {
             BLOCK, OPEN
         }
 
-        public enum Direction {
-            LEFT, BOTTOM, RIGHT, TOP
+        static class Direction {
+            static final int NEIGHBOR_SIZE = 4;
+            static final int LEFT = 0;
+            static final int BOTTOM = 1;
+            static final int RIGHT = 2;
+            static final int TOP = 3;
         }
     }
 }
