@@ -1,5 +1,3 @@
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -55,7 +53,6 @@ public class PointTest {
     public void testComparator() {
         Point p1 = new Point(15, 20);
         Point p2 = new Point(17, 20);
-        Point p3 = new Point(15, 25);
         Point p4 = new Point(20,25);
         Point p5 = new Point(10,15);
 

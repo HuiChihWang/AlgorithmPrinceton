@@ -4,6 +4,7 @@ import java.util.Arrays;
 public class BruteCollinearPoints {
     private int numSegments;
     private Point[] points;
+    private ArrayList<Point[]> usedPairs;
     private ArrayList<Integer[]> visitedSegmentList;
     private LineSegment[] lineSegments;
 
@@ -12,6 +13,8 @@ public class BruteCollinearPoints {
         this.points = points;
         numSegments = 0;
         visitedSegmentList = new ArrayList<>();
+        usedPairs =  new ArrayList<>();
+
         findSegmentBrute();
 
         lineSegments = new LineSegment[numSegments];
@@ -40,7 +43,8 @@ public class BruteCollinearPoints {
                             int colinear2 = points[i].slopeOrder().compare(points[k], points[m]);
 
                             if (colinear1 == 0 && colinear2 == 0) {
-                                if (!checkVisitedSegment(i, j, k,  m)) {
+                                Point[]
+                                if (!checkDuplicateLine(i, j, k,  m)) {
                                     Integer[] segmentPoint = { i, j, k, m };
                                     visitedSegmentList.add(segmentPoint);
                                     numSegments += 1;
@@ -54,32 +58,29 @@ public class BruteCollinearPoints {
         }
     }
 
-    private LineSegment createSegment(Integer[] segment) {
-        Point[] pointsLine = new Point[4];
+    private void createSegment(ArrayList<Point> linePoint) {
 
-        int count = 0;
-        for (int idx: segment) {
-            pointsLine[count] = points[idx];
+        Point[] arrayPoints = (Point[]) linePoint.toArray();
+        Arrays.sort(arrayPoints);
+        Point[] lineTwoPoint = {arrayPoints[0], arrayPoints[arrayPoints.length - 1]};
+
+        if (!checkDuplicateLine(lineTwoPoint)) {
+            LineSegment line = new LineSegment(lineTwoPoint[0], lineTwoPoint[1]);
+            usedPairs.add(lineTwoPoint);
+            numSegments += 1;
         }
-
-        Arrays.sort(pointsLine);
-        return new LineSegment(pointsLine[0], pointsLine[3]);
     }
 
     private boolean checkDifferentIdx(int i, int j, int k, int m) {
         return i != j &&  i != k && i != m && j != k && j != m && k != m;
     }
 
-    private boolean checkVisitedSegment(int i, int j, int k, int m) {
-        Integer[] idxList = {i, j, k, m};
-        Arrays.sort(idxList);
-
-        for (Integer[] segment: visitedSegmentList) {
-            if (Arrays.equals(segment, idxList)) {
+    private boolean checkDuplicateLine(Point[] newLine) {
+        for (Point[] line: usedPairs) {
+            if (line[0].compareTo(newLine[0]) == 0 && line[1].compareTo(newLine[1]) == 0) {
                 return true;
             }
         }
-
         return false;
     }
 
@@ -94,9 +95,9 @@ public class BruteCollinearPoints {
             }
         }
 
-        for (Point point1: pointsSet) {
-            for (Point point2: pointsSet) {
-                if (point1.slopeTo(point2) == Double.NEGATIVE_INFINITY) {
+        for (int i = 0; i < pointsSet.length; ++i) {
+            for (int j = i + 1; j < pointsSet.length; ++j) {
+                if (pointsSet[i].compareTo(pointsSet[j]) == 0) {
                     throw  new IllegalArgumentException();
                 }
             }
