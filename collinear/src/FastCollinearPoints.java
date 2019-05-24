@@ -4,14 +4,12 @@ import java.util.Arrays;
 public class FastCollinearPoints {
 
     private Point[] points;
-    private int numSegments;
     private ArrayList<Point[]> usedPairs;
     private ArrayList<LineSegment> lineList;
 
     public FastCollinearPoints(Point[] points) {
         checkValidPointSet(points);
         this.points = points;
-        numSegments = 0;
         usedPairs = new ArrayList<>();
         lineList = new ArrayList<>();
         findSegments();
@@ -19,7 +17,7 @@ public class FastCollinearPoints {
     }
 
     public int numberOfSegments() {
-        return numSegments;
+        return lineList.size();
     }
 
     public LineSegment[] segments() {
@@ -77,7 +75,7 @@ public class FastCollinearPoints {
         if (!checkDuplicateLine(lineTwoPoint)) {
             LineSegment line = new LineSegment(lineTwoPoint[0], lineTwoPoint[1]);
             usedPairs.add(lineTwoPoint);
-            numSegments += 1;
+            lineList.add(line);
         }
     }
 
