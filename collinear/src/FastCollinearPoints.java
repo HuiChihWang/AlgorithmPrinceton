@@ -21,7 +21,8 @@ public class FastCollinearPoints {
     }
 
     public LineSegment[] segments() {
-        return (LineSegment[]) lineList.toArray();
+        LineSegment[] lines = new LineSegment[lineList.size()];
+        return lineList.toArray(lines);
     }
 
     private void findSegments() {
@@ -67,8 +68,8 @@ public class FastCollinearPoints {
     }
 
     private void createSegment(ArrayList<Point> linePoint) {
-
-        Point[] arrayPoints = (Point[]) linePoint.toArray();
+        Point[] arrayPoints = new Point[linePoint.size()];
+        arrayPoints = linePoint.toArray(arrayPoints);
         Arrays.sort(arrayPoints);
         Point[] lineTwoPoint = {arrayPoints[0], arrayPoints[arrayPoints.length - 1]};
 
@@ -99,9 +100,9 @@ public class FastCollinearPoints {
             }
         }
 
-        for (Point point1: pointsSet) {
-            for (Point point2: pointsSet) {
-                if (point1.slopeTo(point2) == Double.NEGATIVE_INFINITY) {
+        for (int i = 0; i < pointsSet.length; ++i) {
+            for (int j = i + 1; j < pointsSet.length; ++j) {
+                if (pointsSet[i].compareTo(pointsSet[j]) == 0) {
                     throw  new IllegalArgumentException();
                 }
             }

@@ -1,3 +1,5 @@
+import edu.princeton.cs.algs4.StdOut;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -11,7 +13,7 @@ public class BruteCollinearPoints {
         this.points = points;
 
         lineSegments = new ArrayList<>();
-        usedPairs =  new ArrayList<>();
+        usedPairs = new ArrayList<>();
         findSegmentBrute();
     }
 
@@ -20,23 +22,26 @@ public class BruteCollinearPoints {
     }
 
     public LineSegment[] segments() {
-        return (LineSegment[]) lineSegments.toArray();
+        LineSegment[] lines = new LineSegment[lineSegments.size()];
+        return lineSegments.toArray(lines);
     }
 
     private void findSegmentBrute() {
+        if (points.length < 4) {
+            return;
+        }
+
         for (int i = 0; i < points.length; ++i) {
-            for (int j = 0; j < points.length; ++j) {
-                for (int k = 0; k < points.length; ++k) {
-                    for (int m = 0; m < points.length; ++m) {
-                        if (checkDifferentIdx(i, j, k, m)) {
+            for (int j = i + 1; j < points.length; ++j) {
+                for (int k = j + 1; k < points.length; ++k) {
+                    for (int m = k + 1; m < points.length; ++m) {
 
-                            int colinear1 = points[i].slopeOrder().compare(points[j], points[k]);
-                            int colinear2 = points[i].slopeOrder().compare(points[k], points[m]);
+                        int colinear1 = points[i].slopeOrder().compare(points[j], points[k]);
+                        int colinear2 = points[i].slopeOrder().compare(points[k], points[m]);
 
-                            if (colinear1 == 0 && colinear2 == 0) {
-                                Point[] line = {points[i], points[j], points[k], points[m]};
-                                createSegment(line);
-                            }
+                        if (colinear1 == 0 && colinear2 == 0) {
+                            Point[] line = {points[i], points[j], points[k], points[m]};
+                            createSegment(line);
                         }
 
                     }
@@ -57,7 +62,7 @@ public class BruteCollinearPoints {
     }
 
     private boolean checkDuplicateLine(Point[] newLine) {
-        for (Point[] line: usedPairs) {
+        for (Point[] line : usedPairs) {
             if (line[0].compareTo(newLine[0]) == 0 && line[1].compareTo(newLine[1]) == 0) {
                 return true;
             }
@@ -65,16 +70,12 @@ public class BruteCollinearPoints {
         return false;
     }
 
-    private boolean checkDifferentIdx(int i, int j, int k, int m) {
-        return i != j &&  i != k && i != m && j != k && j != m && k != m;
-    }
-
     private void checkValidPointSet(Point[] pointsSet) {
         if (pointsSet == null) {
             throw new IllegalArgumentException();
         }
 
-        for (Point point: pointsSet) {
+        for (Point point : pointsSet) {
             if (point == null) {
                 throw new IllegalArgumentException();
             }
@@ -83,10 +84,9 @@ public class BruteCollinearPoints {
         for (int i = 0; i < pointsSet.length; ++i) {
             for (int j = i + 1; j < pointsSet.length; ++j) {
                 if (pointsSet[i].compareTo(pointsSet[j]) == 0) {
-                    throw  new IllegalArgumentException();
+                    throw new IllegalArgumentException();
                 }
             }
         }
     }
-
 }
