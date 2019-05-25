@@ -54,20 +54,10 @@ public class BruteCollinearPoints {
         Arrays.sort(arrayPoints);
         Point[] lineTwoPoint = {arrayPoints[0], arrayPoints[arrayPoints.length - 1]};
 
-        if (!checkDuplicateLine(lineTwoPoint)) {
-            LineSegment line = new LineSegment(lineTwoPoint[0], lineTwoPoint[1]);
-            usedPairs.add(lineTwoPoint);
-            lineSegments.add(line);
-        }
-    }
+        LineSegment line = new LineSegment(lineTwoPoint[0], lineTwoPoint[1]);
+        usedPairs.add(lineTwoPoint);
+        lineSegments.add(line);
 
-    private boolean checkDuplicateLine(Point[] newLine) {
-        for (Point[] line : usedPairs) {
-            if (line[0].compareTo(newLine[0]) == 0 && line[1].compareTo(newLine[1]) == 0) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void checkValidPointSet(Point[] pointsSet) {

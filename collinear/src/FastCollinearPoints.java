@@ -26,9 +26,9 @@ public class FastCollinearPoints {
     }
 
     private void findSegments() {
-        for (Point point: points) {
-            PointSlope[] sortedSlopes = getSortedSlope(point);
-            findLineSegment(sortedSlopes, point);
+        for (int i = 0; i < points.length; ++i) {
+            PointSlope[] sortedSlopes = getSortedSlope(points[i]);
+            findLineSegment(sortedSlopes, points[i]);
         }
     }
 
