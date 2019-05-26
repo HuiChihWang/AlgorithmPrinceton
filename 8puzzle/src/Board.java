@@ -1,19 +1,20 @@
-import edu.princeton.cs.algs4.StdRandom;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Board {
     private int[][] blocks;
     private int size;
+    private int[] blankPosition;
+    private int[][] swapPos;
 
     public Board(int[][] blocks) {
-        this.blocks = blocks;
-        size = dimension();
+        this.blocks = cloneArray(blocks);
+        size = blocks.length;
+        blankPosition = findBlankPosition();
+        swapPos = chooseSwapPair();
     }
 
     public int dimension() {
-        return blocks.length;
+        return size;
     }
 
     public int hamming() {
@@ -52,9 +53,9 @@ public class Board {
     }
 
     public Board twin() {
-        int[][] blockCopy = cloneArray(blocks);
-        randomSwapPair(blockCopy);
-        return new Board(blockCopy);
+        int[][] blocksTwin = cloneArray(blocks);
+        swap(blocksTwin, swapPos[0], swapPos[1]);
+        return new Board(blocksTwin);
     }
 
     public boolean equals(Object y) {
@@ -78,7 +79,7 @@ public class Board {
 
         for (int i = 0; i < size; ++i) {
             for (int j = 0; j < size; ++j) {
-                if (blocks[i][j] != yBoard.getBlocks()[i][j]) {
+                if (blocks[i][j] != yBoard.blocks[i][j]) {
                     return false;
                 }
             }
@@ -89,14 +90,13 @@ public class Board {
 
     public Iterable<Board> neighbors() {
         ArrayList<Board> neighbors = new ArrayList<>();
-        int[] posBlank = findBlankPosition();
         int[][] shiftTable = new int[][]{{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
 
         for (int[] shift: shiftTable) {
-            int[] posShift = {posBlank[0] + shift[0], posBlank[1] + shift[1]};
+            int[] posShift = {blankPosition[0] + shift[0], blankPosition[1] + shift[1]};
             if (isValidIdx(posShift[0], posShift[1])) {
                 int[][] blocksCopy = cloneArray(blocks);
-                swap(blocksCopy, posBlank, posShift);
+                swap(blocksCopy, blankPosition, posShift);
                 neighbors.add(new Board(blocksCopy));
             }
         }
@@ -120,50 +120,35 @@ public class Board {
         return sb.toString();
     }
 
-    int[][] getBlocks() {
-        return blocks;
-    }
-
     private int[] toRowCol(int idx) {
         idx -= 1;
         int[] pos = {idx / size, idx % size};
         return pos;
     }
 
-    private void randomSwapPair(int[][] array) {
-        int[] pos0 = {0, 0};
-        int[] pos1 = {0, 0};
+    private int[][] chooseSwapPair() {
+        int[][] posPair = new int[2][];
 
-        while (!isCorrectSwapPair(pos0, pos1)) {
-            pos0[0] = StdRandom.uniform(array.length);
-            pos0[1] = StdRandom.uniform(array[0].length);
-            pos1[0] = StdRandom.uniform(array.length);
-            pos1[1] = StdRandom.uniform(array[0].length);
+        int[][] shiftTable = new int[][]{{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+
+        int count = 0;
+        for (int[] shift: shiftTable) {
+            if(count >= 2) {
+                break;
+            }
+
+            if(isValidIdx(shift[0] + blankPosition[0], shift[1] + blankPosition[1])) {
+                posPair[count] = new int[]{shift[0] + blankPosition[0], shift[1] + blankPosition[1]};
+                count += 1;
+            }
         }
-
-        swap(array, pos0, pos1);
+        return posPair;
     }
 
     private void swap(int[][] array, int[] pos0, int[] pos1) {
         int temp = array[pos0[0]][pos0[1]];
         array[pos0[0]][pos0[1]] = array[pos1[0]][pos1[1]];
         array[pos1[0]][pos1[1]] = temp;
-    }
-
-    private int[][] cloneArray(int[][] array) {
-        int[][] copy = new int[array.length][];
-
-        for (int i = 0; i < array.length; ++i) {
-            copy[i] = new int[array[i].length];
-            for (int j = 0; j < array[i].length; ++j) {
-                copy[i][j] = array[i][j];
-            }
-        }
-        return copy;
-    }
-
-    private boolean isCorrectSwapPair(int[] pos0, int[] pos1) {
-        return !Arrays.equals(pos0, pos1) && blocks[pos0[0]][pos0[1]] != 0 && blocks[pos1[0]][pos1[1]] != 0;
     }
 
     private boolean isValidIdx(int row, int col) {
@@ -179,6 +164,18 @@ public class Board {
             }
         }
         return null;
+    }
+
+    private int[][] cloneArray(int[][] array) {
+        int[][] copy = new int[array.length][];
+
+        for (int i = 0; i < array.length; ++i) {
+            copy[i] = new int[array[i].length];
+            for (int j = 0; j < array[i].length; ++j) {
+                copy[i][j] = array[i][j];
+            }
+        }
+        return copy;
     }
 
 }

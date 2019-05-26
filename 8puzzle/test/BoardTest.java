@@ -1,4 +1,5 @@
 import static org.junit.Assert.*;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,6 +61,7 @@ public class BoardTest {
 //        StdOut.println(tester3);
 
         assertEquals(2, testerGoal3.twin().hamming());
+        assertEquals(tester3.twin(), tester3.twin());
     }
 
     @Test
