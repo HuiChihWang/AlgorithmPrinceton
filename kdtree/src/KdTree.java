@@ -2,8 +2,6 @@ import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.RectHV;
 import edu.princeton.cs.algs4.SET;
 
-import java.util.ArrayList;
-
 public class KdTree {
     private KDTreeNode root;
     private int size;
@@ -27,7 +25,8 @@ public class KdTree {
         }
 
         if (isEmpty()) {
-            root = new KDTreeNode(point, true);
+            RectHV rect = new RectHV(0., 0., 1., 1.);
+            root = new KDTreeNode(point, true, rect);
             size += 1;
             return;
         }
@@ -49,9 +48,9 @@ public class KdTree {
         }
 
         if (fromLeft) {
-            prev.left = new KDTreeNode(point, !prev.isCompareX);
+            prev.left = new KDTreeNode(point, !prev.isCompareX, prev.getLowerRegion());
         } else {
-            prev.right = new KDTreeNode(point, !prev.isCompareX);
+            prev.right = new KDTreeNode(point, !prev.isCompareX, prev.getUpperRegion());
         }
 
         size += 1;
@@ -96,18 +95,16 @@ public class KdTree {
             return;
         }
 
+        if(!currentNode.intersect(rect)) {
+            return;
+        }
+
         if (rect.contains(currentNode.point)) {
             pInRange.add(currentNode.point);
         }
 
-        if (currentNode.findLeft(rect)) {
-            searchPointInRange(currentNode.left, rect, pInRange);
-        }
-
-        if (currentNode.findRight(rect)) {
-            searchPointInRange(currentNode.right, rect, pInRange);
-        }
-
+        searchPointInRange(currentNode.left, rect, pInRange);
+        searchPointInRange(currentNode.right, rect, pInRange);
     }
 
     private void checkObjectNull(Object obj) {
@@ -136,9 +133,10 @@ public class KdTree {
         boolean isCompareX;
 
 
-        KDTreeNode(Point2D point, boolean isCompareX) {
+        KDTreeNode(Point2D point, boolean isCompareX, RectHV rect) {
             this.point = point;
             this.isCompareX = isCompareX;
+            this.axisRect = rect;
         }
 
         boolean goLeft(Point2D pointInput) {
@@ -149,12 +147,24 @@ public class KdTree {
             return Point2D.Y_ORDER.compare(pointInput, this.point) < 0;
         }
 
-        boolean findRight(RectHV rect) {
-            return isCompareX ? rect.xmax() > point.x() : rect.ymax() > point.y();
+        RectHV getUpperRegion() {
+            if (isCompareX) {
+                return new RectHV(point.x(), axisRect.ymin(), axisRect.xmax(), axisRect.ymax());
+            }
+
+            return new RectHV(axisRect.xmin(), point.y(), axisRect.xmax(), axisRect.ymax());
         }
 
-        boolean findLeft(RectHV rect) {
-            return isCompareX ? rect.xmin() < point.x() : rect.ymin() < point.y();
+        RectHV getLowerRegion() {
+            if (isCompareX) {
+                return new RectHV(axisRect.xmin(), axisRect.ymin(), point.x(), axisRect.ymax());
+            }
+
+            return new RectHV(axisRect.xmin(), axisRect.ymin(), axisRect.xmax(), point.y());
+        }
+
+        boolean intersect(RectHV rect) {
+            return axisRect.intersects(rect);
         }
     }
 }
