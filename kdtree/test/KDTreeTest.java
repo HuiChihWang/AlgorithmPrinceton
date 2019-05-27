@@ -24,6 +24,10 @@ public class KDTreeTest {
         return new RectHV(xmin, ymin, xmax, ymax);
     }
 
+    private Point2D getRandomPoint() {
+        return new Point2D(StdRandom.uniform(), StdRandom.uniform());
+    }
+
     @Before
     public void init() {
         int testNum = 1000;
@@ -41,5 +45,12 @@ public class KDTreeTest {
     public void testRange() {
         RectHV rect = getRandomRect();
         assertEquals(expect.range(rect), actual.range(rect));
+    }
+
+    @Test
+    public void testNear() {
+        Point2D point = getRandomPoint();
+        assertEquals(expect.nearest(point).distanceSquaredTo(point), actual.nearest(point).distanceSquaredTo(point), 0.0001);
+        assertEquals(expect.nearest(point), actual.nearest(point));
     }
 }

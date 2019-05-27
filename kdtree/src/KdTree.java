@@ -87,7 +87,12 @@ public class KdTree {
 
     public Point2D nearest(Point2D point) {
         checkObjectNull(point);
-        return null;
+
+        if (isEmpty()) {
+            return null;
+        }
+
+        return searchNearestPoint(root, point, root.point);
     }
 
     private void searchPointInRange(KDTreeNode currentNode, RectHV rect, SET<Point2D> pInRange) {
@@ -95,7 +100,7 @@ public class KdTree {
             return;
         }
 
-        if(!currentNode.intersect(rect)) {
+        if (!currentNode.intersect(rect)) {
             return;
         }
 
@@ -105,6 +110,31 @@ public class KdTree {
 
         searchPointInRange(currentNode.left, rect, pInRange);
         searchPointInRange(currentNode.right, rect, pInRange);
+    }
+
+    private Point2D searchNearestPoint(KDTreeNode currentNode, Point2D input, Point2D currentNear) {
+
+        if (currentNode == null) {
+            return currentNear;
+        }
+
+        if (currentNode.axisRect.distanceSquaredTo(input) >= currentNear.distanceSquaredTo(input)) {
+            return currentNear;
+        }
+
+        if (currentNode.point.distanceSquaredTo(input) < currentNear.distanceSquaredTo(input)) {
+            currentNear = currentNode.point;
+        }
+
+        if (currentNode.goLeft(input)) {
+            currentNear = searchNearestPoint(currentNode.left, input, currentNear);
+            currentNear = searchNearestPoint(currentNode.right, input, currentNear);
+        } else {
+            currentNear = searchNearestPoint(currentNode.right, input, currentNear);
+            currentNear = searchNearestPoint(currentNode.left, input, currentNear);
+        }
+
+        return currentNear;
     }
 
     private void checkObjectNull(Object obj) {
