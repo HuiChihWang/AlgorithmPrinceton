@@ -57,6 +57,7 @@ public class KdTree {
     }
 
     public boolean contains(Point2D point) {
+        checkObjectNull(point);
         KDTreeNode start = root;
 
         while (start != null) {
