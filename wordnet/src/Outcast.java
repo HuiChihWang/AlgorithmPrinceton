@@ -11,11 +11,28 @@ public class Outcast {
 
     public String outcast(String[] nouns) {
 
-//        int outCastIdx;
+        int outCastIdx = 0;
+        int maxDist = 0;
         for (int nounIdx = 0; nounIdx < nouns.length; ++nounIdx) {
-
+            int dist = distance(nouns, nounIdx);
+            if (dist > maxDist) {
+                outCastIdx = nounIdx;
+                maxDist = dist;
+            }
         }
-        return null;
+
+        return nouns[outCastIdx];
+    }
+
+    private int distance(String[] nouns, int nounIdx) {
+        int sum = 0;
+        for (int i = 0; i < nouns.length; ++i) {
+            if (i != nounIdx) {
+                sum += wordNet.distance(nouns[nounIdx], nouns[i]);
+            }
+        }
+
+        return sum;
     }
 
     public static void main(String[] args) {
