@@ -1,10 +1,10 @@
 import edu.princeton.cs.algs4.Digraph;
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.Topological;
 
 import java.util.HashMap;
 import java.util.HashSet;
-
 
 public class WordNet {
 
@@ -14,32 +14,42 @@ public class WordNet {
     private SAP sapSolver;
     private int setNum;
 
-    public WordNet(String synsets, String hypernyms){
+    public WordNet(String synsets, String hypernyms) {
+        checkArgumentNull(synsets);
+        checkArgumentNull(hypernyms);
         makeNodeIndexMap(synsets);
         makeWordGraph(hypernyms);
-
+        checkRootedDAG(wordGraph);
         sapSolver = new SAP(wordGraph);
     }
 
-    public Iterable<String> nouns(){
+    public Iterable<String> nouns() {
         return mapWordIndex.keySet();
     }
 
-    public boolean isNoun(String word){
+    public boolean isNoun(String word) {
+        checkArgumentNull(word);
         return mapWordIndex.containsKey(word);
     }
 
-    public int distance(String nounA, String nounB){
+    public int distance(String nounA, String nounB) {
+        checkValidNoun(nounA);
+        checkValidNoun(nounB);
+
         return sapSolver.length(mapWordIndex.get(nounA), mapWordIndex.get(nounB));
     }
 
-    public String sap(String nounA, String nounB){
-        int ancestor = sapSolver.ancestor(mapWordIndex.get(nounA), mapWordIndex.get(nounB));
-        return mapIndexSynset.get(ancestor).toString();
+    public String sap(String nounA, String nounB) {
+        checkValidNoun(nounA);
+        checkValidNoun(nounB);
+
+        int ancestorIdx = sapSolver.ancestor(mapWordIndex.get(nounA), mapWordIndex.get(nounB));
+        HashSet<String> ancestorSet = mapIndexSynset.get(ancestorIdx);
+
+        return convertSetToString(ancestorSet);
     }
 
-
-    private void makeNodeIndexMap(String synsets){
+    private void makeNodeIndexMap(String synsets) {
         mapWordIndex = new HashMap<>();
         mapIndexSynset = new HashMap<>();
         In input = new In(synsets);
@@ -78,8 +88,50 @@ public class WordNet {
         }
     }
 
+    private String convertSetToString(HashSet<String> ancestorSet) {
+        StringBuilder ancestorBuilder = new StringBuilder();
+        for (String ancestor: ancestorSet) {
+            ancestorBuilder.append(ancestor);
+            ancestorBuilder.append(" ");
+        }
+        ancestorBuilder.deleteCharAt(ancestorBuilder.length()-1);
 
-    public static void main(String[] args){
-        WordNet test = new WordNet(args[0], args[1]);
+        return ancestorBuilder.toString();
+    }
+
+    private void checkArgumentNull(Object obj) {
+        if (obj == null) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private void checkValidNoun(String noun) {
+        checkArgumentNull(noun);
+        if (!isNoun(noun)) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private void checkRootedDAG(Digraph G) {
+        Topological topologicalSolver = new Topological(G);
+
+        if (!topologicalSolver.hasOrder()) {
+            throw  new IllegalArgumentException();
+        }
+
+        int rootCount = 0;
+        for (int vertex: topologicalSolver.order()) {
+            if (G.outdegree(vertex) == 0) {
+                rootCount += 1;
+            }
+
+            if (rootCount > 1) {
+                throw new IllegalArgumentException();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        WordNet wordNet = new WordNet(args[0], args[1]);
     }
 }

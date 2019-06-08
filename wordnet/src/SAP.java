@@ -1,4 +1,9 @@
-import edu.princeton.cs.algs4.*;
+import edu.princeton.cs.algs4.Digraph;
+import edu.princeton.cs.algs4.BreadthFirstDirectedPaths;
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.StdIn;
+
 
 import java.util.HashSet;
 
@@ -49,7 +54,7 @@ public class SAP {
 
         int minLength = Integer.MAX_VALUE;
         int nodeWithMinLength = -1;
-        for(int nodeIdx = 0; nodeIdx < graph.V(); ++nodeIdx) {
+        for (int nodeIdx = 0; nodeIdx < graph.V(); ++nodeIdx) {
             if (hasCommonAncester(bfsSolverFromV, bfsSolverFromW, nodeIdx)) {
                 int lengthToCommomNode = bfsSolverFromV.distTo(nodeIdx) + bfsSolverFromW.distTo(nodeIdx);
                 if (lengthToCommomNode < minLength) {
@@ -66,7 +71,7 @@ public class SAP {
         return new int[]{minLength, nodeWithMinLength};
     }
 
-    private boolean hasCommonAncester(BreadthFirstDirectedPaths bfsSolverFromV, BreadthFirstDirectedPaths bfsSolverFromW, int nodeIdx){
+    private boolean hasCommonAncester(BreadthFirstDirectedPaths bfsSolverFromV, BreadthFirstDirectedPaths bfsSolverFromW, int nodeIdx) {
         return bfsSolverFromV.hasPathTo(nodeIdx) && bfsSolverFromW.hasPathTo(nodeIdx);
     }
 
@@ -76,10 +81,10 @@ public class SAP {
         }
     }
 
-    private void checkNullInIterableItem(Iterable iterItem) {
+    private void checkNullInIterableItem(Iterable<Integer> iterItem) {
         checkArgumentNull(iterItem);
-        for (Object obj: iterItem) {
-            checkArgumentNull(obj);
+        for (Integer item: iterItem) {
+            checkArgumentNull(item);
         }
     }
 
