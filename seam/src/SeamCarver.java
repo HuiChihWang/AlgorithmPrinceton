@@ -1,124 +1,198 @@
-import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.Picture;
-
 import java.util.ArrayList;
 
 
 public class SeamCarver {
-    private final int BOUNDARY_ENERGY = 1000;
-    Picture image;
-    double[][] energyArray;
+    private Integer[][] image;
+    private Double[][] energyArray;
+    private boolean isMatrixNoTranspose = true;
 
     public SeamCarver(Picture picture) {
-        image = picture;
+        checkObjectNull(picture);
+        image = createImageArray(picture);
         calculateEnergyArray();
     }
 
     public Picture picture() {
-        return image;
+        return isMatrixNoTranspose ? createPicture(image) : createPicture(transposeIntegerArray(image));
     }
 
     public int width() {
-        return image.width();
+        return isMatrixNoTranspose ? image.length : image[0].length;
     }
 
     public int height() {
-        return image.height();
+        return isMatrixNoTranspose ? image[0].length : image.length;
     }
 
     public  double energy(int x, int y) {
-        return energyArray[x][y];
-    }
-
-
-    public int[] findHorizontalSeam() {
-        transposeEnergyMap();
-        int[] seam = findVerticalSeam();
-        transposeEnergyMap();
-        return seam;
+        checkOutBoundException(x, y);
+        return isMatrixNoTranspose ? energyArray[x][y] : energyArray[y][x];
     }
 
     public int[] findVerticalSeam() {
-
-        double minEnergySumOnPath = Double.POSITIVE_INFINITY;
-        int[] seam = null;
-
-        for (int x = 0; x < width(); ++ x) {
-
-            int[] seamOnPath = new int[height()];
-            double energyOnPath = 0.;
-            seamOnPath[0] = x;
-
-            for (int y = 0; y < height() - 1; ++y) {
-
-                double minEnergy = Double.POSITIVE_INFINITY;
-                int minEnergyPos = 0;
-                for (Integer[] pixelPos: getNextPixelSet(x, y)) {
-                    if (getEnergy(pixelPos[0], pixelPos[1]) < minEnergy) {
-                        minEnergy = getEnergy(pixelPos[0], pixelPos[1]);
-                        minEnergyPos = pixelPos[0];
-                    }
-                }
-
-                energyOnPath += minEnergy;
-                seamOnPath[y + 1] = minEnergyPos;
-
-            }
-
-            if (energyOnPath < minEnergySumOnPath) {
-                seam = seamOnPath;
-                minEnergySumOnPath = energyOnPath;
-            }
+        if (!isMatrixNoTranspose) {
+            image = transposeIntegerArray(image);
+            energyArray = transposeDoubleArray(energyArray);
+            isMatrixNoTranspose = true;
         }
 
-        return seam;
+        return findSeamOnImage();
+    }
+
+    public int[] findHorizontalSeam() {
+        if (isMatrixNoTranspose) {
+            image = transposeIntegerArray(image);
+            energyArray = transposeDoubleArray(energyArray);
+            isMatrixNoTranspose = false;
+        }
+
+        return findSeamOnImage();
     }
 
     public void removeHorizontalSeam(int[] seam) {
+        if (isMatrixNoTranspose) {
+            image = transposeIntegerArray(image);
+            energyArray = transposeDoubleArray(energyArray);
+            isMatrixNoTranspose = false;
+        }
+
+        image = removeSeamOnImage(seam);
+        calculateEnergyArray();
 
     }
 
     public void removeVerticalSeam(int[] seam) {
 
-        Picture seamCarvedImage = new Picture(width() - 1, height());
-        for (int y = 0; y < height(); ++y) {
-            int count = 0;
-            for (int x = 0; x < width(); ++ x) {
+        if (!isMatrixNoTranspose) {
+            image = transposeIntegerArray(image);
+            energyArray = transposeDoubleArray(energyArray);
+            isMatrixNoTranspose = true;
+        }
+
+        image = removeSeamOnImage(seam);
+        calculateEnergyArray();
+    }
+
+    private Integer[][] removeSeamOnImage(int[] seam) {
+        checkValidSeam(seam);
+        Integer[][] carvedImage =  createEmpty2DIntegerArray(image.length - 1, image[0].length);
+
+        for (int y = 0; y < image[0].length; ++y) {
+            int countX = 0;
+            for (int x = 0; x < image.length; ++ x) {
                 if (x != seam[y]) {
-                    seamCarvedImage.setRGB(count, y, picture().getRGB(x, y));
-                    count += 1;
+                    carvedImage[countX][y] = image[x][y];
+                    countX += 1;
                 }
             }
         }
+
+        return carvedImage;
     }
 
-    private void calculateEnergyArray() {
-        initEnergyArray();
+    private int[] findSeamOnImage() {
+        Double[][] energyAcc = createEmpty2DDoubleArray(image.length, image[0].length);
+        Integer[][] prevLocation = createEmpty2DIntegerArray(image.length, image[0].length);
 
-        for (int x = 0; x < width(); ++x) {
-            for (int y = 0; y < height(); ++y) {
+        for (int x = 0; x < image.length; ++x) {
+            for (int y = 0; y < image[0].length; ++y) {
+                energyAcc[x][y] = energyArray[x][y];
+            }
+        }
+
+        for (int y = 1; y < image[0].length; ++y) {
+            for (int x = 0; x < image.length; ++x) {
+                int prevShift = findPreviousMinEnergyPos(x, y, energyAcc);
+                energyAcc[x][y] += energyAcc[prevShift][y - 1];
+                prevLocation[x][y] = prevShift;
+            }
+        }
+
+        return findPathWithMinEnergy(energyAcc, prevLocation);
+    }
+
+    private int findPreviousMinEnergyPos(int x, int y, Double[][] energyAcc) {
+        int minEnergyPos = 0;
+        double minEnergy = Double.POSITIVE_INFINITY;
+        for (Integer[] prevPos: getPrevPixelSet(x, y)) {
+            if (energyAcc[prevPos[0]][prevPos[1]] < minEnergy) {
+                minEnergyPos = prevPos[0];
+                minEnergy = energyAcc[prevPos[0]][prevPos[1]];
+            }
+        }
+
+        return minEnergyPos;
+    }
+
+    private int[] findPathWithMinEnergy(Double[][] energyAcc, Integer[][] prevLocation) {
+        int minIdx = 0;
+        double minEnergy = Double.POSITIVE_INFINITY;
+        for (int x = 0; x < image.length; ++x) {
+            if (energyAcc[x][image[0].length-1] < minEnergy) {
+                minEnergy = energyAcc[x][image[0].length - 1];
+                minIdx = x;
+            }
+        }
+
+        int[] seam = new int[image[0].length];
+        seam[image[0].length-1] = minIdx;
+
+        for (int y = image[0].length-2; y >= 0; --y) {
+            seam[y] = prevLocation[seam[y+1]][y+1];
+        }
+
+        return seam;
+    }
+
+    private Iterable<Integer[]> getPrevPixelSet(int x, int y) {
+        ArrayList<Integer[]> neighbors = new ArrayList<>();
+
+        y -= 1;
+        for (int xShift = x - 1; xShift <= x + 1; ++xShift) {
+            if (!isOutBound(xShift, y)) {
+                neighbors.add(new Integer[]{xShift, y});
+            }
+        }
+        return  neighbors;
+    }
+
+
+    private void calculateEnergyArray() {
+        energyArray = createEmpty2DDoubleArray(image.length, image[0].length);
+
+        for (int x = 0; x < image.length; ++x) {
+            for (int y = 0; y < image[0].length; ++y) {
                 energyArray[x][y] = getEnergy(x, y);
             }
         }
     }
 
-    private void transposeEnergyMap() {
-        double[][] energyTranspose = new double[height()][];
+    private Integer[][] createImageArray(Picture picture) {
+        Integer[][] imgArray = createEmpty2DIntegerArray(picture.width(), picture.height());
 
-        for (int y = 0; y < height(); ++y) {
-            energyTranspose[y] = new double[width()];
-
-            for (int x = 0; x < width(); ++x) {
-                energyTranspose[y][x] = energyArray[x][y];
+        for (int x = 0; x < picture.width(); ++x) {
+            for (int y = 0; y < picture.height(); ++y) {
+                imgArray[x][y] = picture.getRGB(x, y);
             }
         }
+        return imgArray;
+    }
 
-        energyArray = energyTranspose;
+    private Picture createPicture(Integer[][] imageArray) {
+        Picture picture = new Picture(imageArray.length, imageArray[0].length);
+
+        for (int x = 0; x < imageArray.length; ++x) {
+            for (int y = 0; y < imageArray[0].length; ++y) {
+                picture.setRGB(x, y, imageArray[x][y]);
+            }
+        }
+        return picture;
     }
 
     private double getEnergy(int x, int y) {
         if (isBoundary(x, y)) {
-            return BOUNDARY_ENERGY;
+            return 1000.;
         }
 
         double xGrad = getGradSquare(x, y, true);
@@ -128,8 +202,8 @@ public class SeamCarver {
     }
 
     private double getGradSquare(int x, int y, boolean isXDir) {
-
         int[] rgbNext,rgbPrev;
+
         if (isXDir) {
             rgbNext = getRGB(x + 1, y);
             rgbPrev = getRGB(x - 1, y);
@@ -146,20 +220,12 @@ public class SeamCarver {
         return (double) sum;
     }
 
-    private void initEnergyArray() {
-        energyArray = new double[width()][];
-
-        for (int x = 0; x < width(); ++x) {
-            energyArray[x] = new double[height()];
-        }
-    }
-
     private boolean isBoundary(int x, int y) {
-        return x == 0 || x == width() - 1 || y ==0 || y == height() - 1;
+        return x == 0 || x == image.length - 1 || y == 0 || y == image[0].length - 1;
     }
 
     private int[] getRGB(int x, int y) {
-        int color = image.getRGB(x, y);
+        int color = image[x][y];
         int blue = color & 0xff;
         int green = (color & 0xff00) >> 8;
         int red = (color & 0xff0000) >> 16;
@@ -167,24 +233,92 @@ public class SeamCarver {
         return new int[]{red, green, blue};
     }
 
-    private Iterable<Integer[]> getNextPixelSet(int x, int y) {
-        ArrayList<Integer[]> neighbors = new ArrayList<>();
+    private boolean isOutBound(int x, int y) {
+        return x < 0 || x >= image.length || y < 0 || y >= image[0].length;
+    }
 
-        y += 1;
-        for (int xShift = x -1; xShift <= x + 1; ++xShift) {
-            if (!isOutBound(xShift, y)) {
-                neighbors.add(new Integer[]{xShift, y});
+    private static Integer[][] createEmpty2DIntegerArray(int rowNum, int colNum) {
+        Integer[][] newArray = new Integer[rowNum][];
+        for (int row = 0; row < rowNum; ++row) {
+            newArray[row] = new Integer[colNum];
+        }
+        return newArray;
+    }
+
+    private static Double[][] createEmpty2DDoubleArray(int rowNum, int colNum) {
+        Double[][] newArray = new Double[rowNum][];
+        for (int row = 0; row < rowNum; ++row) {
+            newArray[row] = new Double[colNum];
+        }
+        return newArray;
+    }
+
+    private static Integer[][] transposeIntegerArray(Integer[][] array) {
+        int rowNum = array.length;
+        int colNum = array[0].length;
+        Integer[][] arrayTranspose = new Integer[colNum][];
+
+        for (int colIdx = 0; colIdx < colNum; ++colIdx) {
+            arrayTranspose[colIdx] = new Integer[rowNum];
+
+            for (int rowIdx = 0; rowIdx < rowNum; ++rowIdx) {
+                arrayTranspose[colIdx][rowIdx] = array[rowIdx][colIdx];
             }
         }
-        return  neighbors;
+
+        return arrayTranspose;
     }
 
-    private boolean isOutBound(int x, int y) {
-        return x < 0 || x >= width() || y < 0 || y >= height();
+    private static Double[][] transposeDoubleArray(Double[][] array) {
+        int rowNum = array.length;
+        int colNum = array[0].length;
+        Double[][] arrayTranspose = new Double[colNum][];
+
+        for (int colIdx = 0; colIdx < colNum; ++colIdx) {
+            arrayTranspose[colIdx] = new Double[rowNum];
+
+            for (int rowIdx = 0; rowIdx < rowNum; ++rowIdx) {
+                arrayTranspose[colIdx][rowIdx] = array[rowIdx][colIdx];
+            }
+        }
+
+        return arrayTranspose;
     }
 
-    public static void main(String[] args) {
-        Picture p = new Picture("data/img/HJocean.png");
-        SeamCarver seamCarver = new SeamCarver(p);
+    private void checkOutBoundException(int x, int y) {
+        if (x  < 0 || y < 0 || x >= width() || y>= height()) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private void checkObjectNull(Object obj) {
+        if (obj == null) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private void checkValidSeam(int[] seam) {
+        checkObjectNull(seam);
+
+        if (image.length <= 1) {
+            throw new IllegalArgumentException();
+        }
+
+        if (seam.length != image[0].length) {
+            throw new IllegalArgumentException();
+        }
+
+        int prevIdx = seam[0];
+        for (int idx: seam){
+            if (idx < 0 || idx >= image.length) {
+                throw new IllegalArgumentException();
+            }
+
+            if (Math.abs(prevIdx - idx) > 1) {
+                throw new IllegalArgumentException();
+            }
+
+            prevIdx = idx;
+        }
     }
 }
