@@ -124,11 +124,21 @@ public class BaseballElimination {
         FlowNetwork flowNet = constructFlowNetwork(teamIdx);
         FordFulkerson maxFlowSolution = new FordFulkerson(flowNet, 0, flowNet.V() -1);
 
-        if (isTeamEliminate(maxFlowSolution, teamIdx)) {
+        HashMap<Integer, Integer> mapVertexTeamIdx = getMapVertexTeamIdx(teamIdx);
+
+        if (maxFlowSolution.value() < getTargetMaxFlow(flowNet)) {
+
+            HashSet<String> setCertificate = new HashSet<>();
+
+            for (int teamCount = 0; teamCount < numberTeams - 1; ++teamCount) {
+                int vertex = flowNet.V() - 2 - teamCount;
+                if (maxFlowSolution.inCut(vertex)) {
+                    setCertificate.add(mapIndexName.get(mapVertexTeamIdx.get(vertex)));
+                }
+            }
+
+            mapEliminateCertificates.put(teamIdx, setCertificate);
         }
-
-
-
     }
 
     private FlowNetwork constructFlowNetwork(int team) {
@@ -137,14 +147,7 @@ public class BaseballElimination {
 
         FlowNetwork flowNet = new FlowNetwork(vertexNumber);
 
-        int teamVertexStart = gameVertex + 1;
-        HashMap<Integer, Integer> mapTeamVertex = new HashMap<>();
-        for (int teamIdx = 0; teamIdx < numberTeams; ++teamIdx) {
-            if (teamIdx != team) {
-                mapTeamVertex.put(teamIdx, teamVertexStart);
-                teamVertexStart += 1;
-            }
-        }
+        HashMap<Integer, Integer> mapTeamVertex = getMapVertexTeamIdx(team);
 
         int gameVertexCount = 1;
         for (int teamIdx = 0; teamIdx < numberTeams; ++teamIdx) {
@@ -175,18 +178,29 @@ public class BaseballElimination {
         return flowNet;
     }
 
-    private boolean isTeamEliminate(FordFulkerson maxFlowSolution, int team) {
-        int targetFlow = 0;
-        for (int teamIdx = 0; teamIdx < numberTeams; teamIdx++) {
-            for (int otherIdx = teamIdx; otherIdx < numberTeams; otherIdx++) {
-                if (teamIdx != team && otherIdx != team) {
-                    targetFlow += againstRecord[teamIdx][otherIdx];
-                }
+    private double getTargetMaxFlow(FlowNetwork flowNetwork) {
+        double capacitySumToSource = 0.;
+
+        for (FlowEdge edgeToSource: flowNetwork.adj(0)) {
+            capacitySumToSource += edgeToSource.capacity();
+        }
+
+        return capacitySumToSource;
+    }
+
+    private HashMap<Integer, Integer> getMapVertexTeamIdx(int team) {
+        int gameVertex = (numberTeams - 1) * (numberTeams - 2) / 2;
+        int teamVertexStart = gameVertex + 1;
+        HashMap<Integer, Integer> mapTeamVertex = new HashMap<>();
+
+        for (int teamIdx = 0; teamIdx < numberTeams; ++teamIdx) {
+            if (teamIdx != team) {
+                mapTeamVertex.put(teamIdx, teamVertexStart);
+                teamVertexStart += 1;
             }
         }
 
-        return (double) targetFlow < maxFlowSolution.value();
+        return mapTeamVertex;
     }
-
 
 }
